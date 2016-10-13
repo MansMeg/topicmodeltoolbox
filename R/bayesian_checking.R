@@ -23,12 +23,13 @@
 #'
 #' @export
 imi <- function(state, w=NULL){
+  library(dplyr)
   assert_state(state)
   checkmate::assert(checkmate::check_class(w, "tbl_df"),
                     checkmate::check_character(w, null.ok = TRUE))
 
   # Calculate H(D|k)
-  HDk <- st %>%
+  HDk <- state %>%
     dplyr::group_by(topic, doc) %>%
     dplyr::summarise(n = n()) %>%
     dplyr::group_by(topic) %>%
@@ -39,10 +40,10 @@ imi <- function(state, w=NULL){
 
   # Calculate H(D|W=w, k)
   if(!is.null(w)) {
-      st <- st %>%
+    state <- state %>%
         dplyr::right_join(dplyr::transmute(w, topic, type), by = c("topic", "type"))
   }
-  st %>%
+  state %>%
     dplyr::group_by(topic, doc, type) %>%
     dplyr::summarise(n = n()) %>%
     dplyr::group_by(topic, type) %>%
@@ -69,6 +70,7 @@ imi <- function(state, w=NULL){
 #'
 #' @export
 mi <- function(state){
+  library(dplyr)
   assert_state(state)
 
   st <-
