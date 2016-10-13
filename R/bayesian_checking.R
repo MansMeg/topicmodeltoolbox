@@ -12,52 +12,49 @@
 #'
 #' @param state A topic model state file
 #' @param k The topic to calculate IMI
-#' @param w A vector of types to calculate IMI for (faster to calculate)
+#' @param w A tbl_df with types and topics to calculate IMI for. Default is NULL.
 #'
 #' @details
 #'
+#' @examples
+#' # Load the state of the union topic model
+#' load(system.file("extdata/sotu_50.Rdata", package = "topicmodeltoolbox"))
+#' w <- type_probability(sotu_50, 10)
+#'
 #' @export
-imi <- function(state, k, w=NULL){
+imi <- function(state, w=NULL){
   assert_state(state)
-  checkmate::assert_int(k, lower = 1)
-  checkmate::assert_character(w, null.ok = TRUE)
-  if(!is.null(w)) checkmate::assert_subset(w, levels(state$type))
-
-  # Remove other topics
-  st <- dplyr::filter(state, topic == k)
+  checkmate::assert(checkmate::check_class(w, "tbl_df"),
+                    checkmate::check_character(w, null.ok = TRUE))
 
   # Calculate H(D|k)
   HDk <- st %>%
-    dplyr::group_by(doc) %>%
+    dplyr::group_by(topic, doc) %>%
     dplyr::summarise(n = n()) %>%
-    ungroup() %>%
+    dplyr::group_by(topic) %>%
     mutate(p = n/sum(n)) %>%
     mutate(pmi = log(p) * p) %>%
-    summarise(HDk = sum(pmi))
-  HDk <- - HDk$HDk[1]
+    summarise(HDk = sum(pmi)) %>%
+    mutate(HDk = -1 * HDk)
 
   # Calculate H(D|W=w, k)
   if(!is.null(w)) {
-    w <- data_frame(type=w)
-    suppressMessages(
       st <- st %>%
-        dplyr::mutate(type = as.character(type)) %>%
-        dplyr::right_join(w)
-    )
+        dplyr::right_join(dplyr::transmute(w, topic, type), by = c("topic", "type"))
   }
   st %>%
-    dplyr::group_by(doc, type) %>%
+    dplyr::group_by(topic, doc, type) %>%
     dplyr::summarise(n = n()) %>%
-    ungroup() %>%
-    dplyr::group_by(type) %>%
+    dplyr::group_by(topic, type) %>%
     mutate(p = n/sum(n)) %>%
     mutate(pmi = log(p) * p) %>%
-    summarise(imi = HDk - -sum(pmi)) %>%
+    summarise(imi = sum(pmi)) %>%
+    left_join(HDk, by = "topic") %>%
+    mutate(imi = imi + HDk, HDk = NULL) %>%
     ungroup()
 }
 
-
-#' Calculate MI
+#' Calculate Mutual information between types and documents
 #'
 #' @description
 #' Function to calculate mutual information between types and documents (MI(D,W|k))
