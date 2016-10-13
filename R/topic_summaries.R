@@ -39,12 +39,14 @@ topic_probability <- function(state, j, beta = 0){
   assert_state(state)
   checkmate::assert_int(j, lower = 1)
   checkmate::assert_number(beta, lower = 0)
-  dplyr::top_n(dplyr::group_by(p_k_given_w(state, beta), topic), n = 5, wt = p)
+  top_j_types(p_k_given_w(state, beta), j)
 }
 
 #' @rdname type_probability
 #' @export
-KR1_weight <- function(state, j, beta = 0){
+KR1 <- function(state, j, beta = 0){
+  library(dplyr)
+
   assert_state(state)
   checkmate::assert_int(j, lower = 1)
   checkmate::assert_number(beta, lower = 0)
@@ -58,7 +60,9 @@ KR1_weight <- function(state, j, beta = 0){
 
 #' @rdname type_probability
 #' @export
-KR2_weight <- function(state, j, beta = 0){
+KR2 <- function(state, j, beta = 0){
+  library(dplyr)
+
     assert_state(state)
     checkmate::assert_int(j, lower = 1)
     checkmate::assert_number(beta, lower = 0)
@@ -76,7 +80,9 @@ KR2_weight <- function(state, j, beta = 0){
 
 #' @rdname type_probability
 #' @export
-relevance_weight <- function(state, j, beta = 0, lambda = 0.6){
+relevance <- function(state, j, beta = 0, lambda = 0.6){
+  library(dplyr)
+
   assert_state(state)
   checkmate::assert_int(j, lower = 1)
   checkmate::assert_number(beta, lower = 0)
@@ -107,6 +113,8 @@ top_j_types <- function(wtttm, j){
 }
 
 p_w_given_k <- function(state, beta = 0){
+  library(dplyr)
+
   V <- length(levels(state$type))
   topic_mass <- state %>%
     group_by(topic) %>%
@@ -121,6 +129,8 @@ p_w_given_k <- function(state, beta = 0){
 }
 
 p_k_given_w <- function(state, beta = 0){
+  library(dplyr)
+
   K <- length(unique(state$topic))
 
   type_mass <- state %>%
@@ -137,6 +147,8 @@ p_k_given_w <- function(state, beta = 0){
 }
 
 p_wk <- function(state, beta = 0){
+  library(dplyr)
+
   V <- length(levels(state$type))
   K <- length(unique(state$topic))
   total_mass <- state %>%
@@ -151,6 +163,7 @@ p_wk <- function(state, beta = 0){
 }
 
 p_w <- function(state, beta = 0){
+  library(dplyr)
   V <- length(levels(state$type))
   K <- length(unique(state$topic))
   total_mass <- state %>%
@@ -163,6 +176,7 @@ p_w <- function(state, beta = 0){
 }
 
 p_k <- function(state, beta = 0){
+  library(dplyr)
   V <- length(levels(state$type))
   K <- length(unique(state$topic))
   total_mass <- state %>%
