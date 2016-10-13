@@ -1,6 +1,6 @@
-context("type_topic_reweighting")
+context("mi and imi")
 
-load(system.file("extdata/sotu_50.Rdata", package = "topicmodeltoolbox"))
+load(system.file("extdata/sotu50.Rdata", package = "topicmodeltoolbox"))
 
 test_that(desc="imi",{
   imi_test <- imi(sotu50)
