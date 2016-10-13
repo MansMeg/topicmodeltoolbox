@@ -1,3 +1,5 @@
+# Bayesian checking methods for topic models
+
 #' Calculate IMI
 #'
 #' @description
@@ -15,7 +17,7 @@
 #' @details
 #'
 #' @export
-IMI <- function(state, k, w=NULL){
+imi <- function(state, k, w=NULL){
   assert_state(state)
   checkmate::assert_int(k, lower = 1)
   checkmate::assert_character(w, null.ok = TRUE)
@@ -67,27 +69,27 @@ IMI <- function(state, k, w=NULL){
 #' Mimno, D. and Blei, D. Bayesian Checking for Topic Models
 #'
 #' @param state A topic model state file
-#' @param k The topic to calculate MI for
-#'
 #'
 #' @export
-MI <- function(state, k){
+mi <- function(state){
   assert_state(state)
-  checkmate::assert_int(k, lower = 1)
 
-  st <- dplyr::filter(state, topic == k) %>%
-    dplyr::group_by(doc, type) %>%
+  st <-
+    state %>%
+    dplyr::group_by(topic, doc, type) %>%
     dplyr::summarise(n = n()) %>% ungroup()
 
-  Nd <- st %>% dplyr::group_by(doc) %>%
+  Ndk <- st %>% dplyr::group_by(topic, doc) %>%
     dplyr::summarise(nd = n()) %>% ungroup()
-  Nw <- st %>% dplyr::group_by(type) %>%
+  Nwk <- st %>% dplyr::group_by(topic, type) %>%
     dplyr::summarise(nw = n()) %>% ungroup()
-  Nk <- sum(st$n)
-  suppressMessages(
-    st <- st %>% dplyr::full_join(Nd) %>%
-      dplyr::full_join(Nw) %>%
-      mutate(part_mi = n/Nk * log((n * Nk)/(nd * nw)))
-  )
-  sum(st$part_mi)
+  Nk <- st %>% dplyr::group_by(topic) %>%
+    dplyr::summarise(nk = sum(n)) %>% ungroup()
+
+  st %>% dplyr::group_by(topic) %>%
+    dplyr::full_join(Ndk, by = c("topic", "doc")) %>%
+    dplyr::full_join(Nwk, by = c("topic", "type")) %>%
+    dplyr::full_join(Nk, by = c("topic")) %>%
+    mutate(part_mi = n/nk * log((n * nk)/(nd * nw))) %>%
+    summarise(mi = sum(part_mi))
 }
