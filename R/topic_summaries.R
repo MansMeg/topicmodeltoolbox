@@ -96,13 +96,14 @@ relevance_weight <- function(state, j, beta = 0, lambda = 0.6){
 
 # Below are helper functions used in multiple reweighting methods
 
+#' @title Return top j terms by weight
 #' @param wttm a weighted tidy type topic matrix
 #' @param j top j types to return (min 1 type)
 top_j_types <- function(wtttm, j){
   checkmate::assert_class(wtttm, "tbl_df")
   checkmate::assert_integerish(j, lower = 1)
   checkmate::assert_subset(names(wtttm), c("p", "topic", "type"))
-  dplyr::top_n(dplyr::group_by(wtttm, topic), n = j, wt = p)
+  dplyr::ungroup(dplyr::top_n(dplyr::group_by(wtttm, topic), n = j, wt = p))
 }
 
 p_w_given_k <- function(state, beta = 0){
